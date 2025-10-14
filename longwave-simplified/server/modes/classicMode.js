@@ -22,7 +22,7 @@ class ClassicModeLogic {
   }
 
   // Start the game (after teams are picked)
-  static startGame(room, startingPlayerId) {
+  static startGame(room, startingPlayerId, theme = null) {
     const playerTeam = room.playerTeams.get(startingPlayerId);
     
     // Give the opposite team 1 point to start (balancing)
@@ -42,7 +42,8 @@ class ClassicModeLogic {
       ...initialScores,
       clueGiver: startingPlayerId,
       phase: RoundPhase.GIVE_CLUE,
-      turnsTaken: 0
+      turnsTaken: 0,
+      theme: theme || 'all' // Store selected theme
     };
 
     return room;
@@ -169,13 +170,22 @@ class ClassicModeLogic {
     return null;
   }
 
-  // Get spectrum card based on deck index and seed
-  static getSpectrumCard(deckIndex, deckSeed, cards) {
+  // Get spectrum card based on deck index, seed, and theme
+  static getSpectrumCard(deckIndex, deckSeed, cards, theme = null) {
+    // Filter cards by theme if specified
+    let availableCards = cards;
+    
+    if (theme && theme !== 'all') {
+      // Cards should be filtered by theme on the server
+      // This is just a fallback if needed
+      availableCards = cards;
+    }
+    
     // Simple deterministic card selection based on seed and index
     // This ensures all players see the same card
     const seedValue = deckSeed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const cardIndex = (seedValue + deckIndex) % cards.length;
-    return cards[cardIndex];
+    const cardIndex = (seedValue + deckIndex) % availableCards.length;
+    return availableCards[cardIndex];
   }
 }
 

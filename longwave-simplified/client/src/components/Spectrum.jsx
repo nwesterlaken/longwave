@@ -14,7 +14,7 @@ function Spectrum({ leftLabel, rightLabel, target = null, guess = null, onGuessC
   return (
     <div className="spectrum-container">
       {/* Labels */}
-      <div className="flex justify-between mb-md">
+      <div className="flex justify-between mb-xl">
         <div className="spectrum-label left">
           <span>{leftLabel}</span>
         </div>

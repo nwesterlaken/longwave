@@ -2,10 +2,15 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import RoomManager from './roomManager.js';
 import ClassicModeLogic from './modes/classicMode.js';
-import { getCardByIndex } from './spectrumCards.js';
+import { getCardByIndex, getCardsByTheme, getCardByIndexFromTheme } from './spectrumCards.js';
 import { RoundPhase } from '../shared/gameTypes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -17,6 +22,7 @@ const io = new Server(httpServer, {
 });
 
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 const roomManager = new RoomManager();
 
 // Wait for roomManager to initialize
@@ -30,6 +36,13 @@ roomManager.ready.then(() => {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files in production
+if (isProduction) {
+  const clientBuildPath = path.join(__dirname, '../client/dist');
+  console.log(`Serving static files from: ${clientBuildPath}`);
+  app.use(express.static(clientBuildPath));
+}
 
 // REST API endpoints
 app.get('/health', (req, res) => {
@@ -56,6 +69,13 @@ app.get('/api/rooms/:roomId', (req, res) => {
     createdAt: room.createdAt
   });
 });
+
+// In production, serve index.html for all other routes (SPA support)
+if (isProduction) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -201,9 +221,10 @@ io.on('connection', (socket) => {
       playerTeams: room.playerTeams
     });
 
-    // Broadcast updated state
+    // Broadcast updated state including playerTeams
     io.to(roomId).emit('classic:game_initialized', {
-      gameState: room.gameState
+      gameState: room.gameState,
+      playerTeams: Array.from(room.playerTeams.entries())
     });
   });
 
@@ -230,7 +251,7 @@ io.on('connection', (socket) => {
   });
 
   // Start the game (after teams are picked)
-  socket.on('classic:start_game', async ({ roomId, startingPlayerId }) => {
+  socket.on('classic:start_game', async ({ roomId, startingPlayerId, theme }) => {
     let room = roomManager.getRoom(roomId);
     if (!room) {
       socket.emit('error', { message: 'Room not found' });
@@ -238,10 +259,17 @@ io.on('connection', (socket) => {
     }
 
     try {
-      room = ClassicModeLogic.startGame(room, startingPlayerId);
+      room = ClassicModeLogic.startGame(room, startingPlayerId, theme);
       
-      // Get first spectrum card
-      const card = getCardByIndex(room.gameState.deckIndex);
+      // Get first spectrum card from selected theme
+      // Convert deckSeed string to number for seeded shuffle
+      const seedValue = room.gameState.deckSeed
+        .split('')
+        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      
+      const card = theme 
+        ? getCardByIndexFromTheme(theme, room.gameState.deckIndex, seedValue)
+        : getCardByIndex(room.gameState.deckIndex);
       
       await roomManager.updateGameState(roomId, {
         gameState: room.gameState
@@ -279,6 +307,20 @@ io.on('connection', (socket) => {
     } catch (error) {
       socket.emit('error', { message: error.message });
     }
+  });
+
+  // Update guess position (real-time slider)
+  socket.on('classic:update_guess', ({ roomId, guess }) => {
+    const room = roomManager.getRoom(roomId);
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+
+    // Broadcast guess update to all players in room
+    socket.to(roomId).emit('classic:guess_updated', {
+      guess
+    });
   });
 
   // Submit guess
@@ -343,13 +385,24 @@ io.on('connection', (socket) => {
       return;
     }
 
+    const theme = room.gameState?.theme;
+
+    // Convert deckSeed to number for seeded shuffle
+    const seedValue = room.gameState.deckSeed
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    
     // Get current card for turn summary
-    const currentCard = getCardByIndex(room.gameState.deckIndex);
+    const currentCard = theme 
+      ? getCardByIndexFromTheme(theme, room.gameState.deckIndex, seedValue)
+      : getCardByIndex(room.gameState.deckIndex);
     
     room = ClassicModeLogic.nextRound(room, nextClueGiverId, currentCard);
     
-    // Get next card
-    const nextCard = getCardByIndex(room.gameState.deckIndex);
+    // Get next card from theme (with updated deckIndex)
+    const nextCard = theme
+      ? getCardByIndexFromTheme(theme, room.gameState.deckIndex, seedValue)
+      : getCardByIndex(room.gameState.deckIndex);
     
     await roomManager.updateGameState(roomId, {
       gameState: room.gameState
@@ -412,6 +465,8 @@ httpServer.listen(PORT, () => {
   -------------------------
   Port: ${PORT}
   Environment: ${process.env.NODE_ENV || 'development'}
+  Mode: ${isProduction ? 'Production (serving client)' : 'Development'}
   Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}
+  Access: http://localhost:${PORT}
   `);
 });

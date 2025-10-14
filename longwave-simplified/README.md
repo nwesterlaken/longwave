@@ -71,30 +71,61 @@ npm install
 
 ## Development
 
-### Server starten
+### Quick Start
 
 ```bash
+# Terminal 1 - Server
 cd server
+npm install
 npm run dev
-```
 
-De server draait op `http://localhost:3001`
-
-### Client starten
-
-```bash
+# Terminal 2 - Client
 cd client
+npm install
 npm run dev
 ```
 
-De client draait op `http://localhost:5173`
+Server: `http://localhost:3001`  
+Client: `http://localhost:5173`
 
 ### Tests uitvoeren
 
 ```bash
 cd server
-npm test
+npm test  # 10 unit tests
 ```
+
+---
+
+## Production Deployment
+
+### Docker (Recommended)
+
+```bash
+docker-compose up -d
+```
+
+Application available at `http://localhost:3001`
+
+### Manual Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions including:
+- Docker deployment
+- Manual deployment
+- Cloud platform guides (Railway, Render, DigitalOcean, AWS)
+- Environment configuration
+- Monitoring & scaling
+- Backup & restore
+
+---
+
+## Quick Deployment Links
+
+**Deploy to Railway:** [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new)
+
+**Deploy to Render:** [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuration details.
 
 ## Project Structuur
 

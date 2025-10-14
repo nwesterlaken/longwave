@@ -27,9 +27,9 @@ export function getOppositeTeam(team) {
 }
 
 export function getTeamName(team) {
-  if (team === Team.LEFT) return 'Links Brein';
-  if (team === Team.RIGHT) return 'Rechts Brein';
-  return 'Speler';
+  if (team === Team.LEFT) return 'Linker hersenhelft';
+  if (team === Team.RIGHT) return 'Rechter hersenhelft';
+  return 'Geen Team';
 }
 
 // Generate random spectrum target (0-20)

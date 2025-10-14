@@ -6,7 +6,10 @@ import './styles.css';
 function App() {
   const [connected, setConnected] = useState(false);
   const [roomId, setRoomId] = useState('');
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(() => {
+    // Load saved name from localStorage
+    return localStorage.getItem('longwave_player_name') || '';
+  });
   const [playerId, setPlayerId] = useState('');
   const [currentRoom, setCurrentRoom] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -76,6 +79,9 @@ function App() {
       return;
     }
 
+    // Save name to localStorage
+    localStorage.setItem('longwave_player_name', playerName.trim());
+
     const newRoomId = generateRoomId();
     const newPlayerId = `player_${Date.now()}`;
 
@@ -100,6 +106,9 @@ function App() {
       setError('Voer een room code in');
       return;
     }
+
+    // Save name to localStorage
+    localStorage.setItem('longwave_player_name', playerName.trim());
 
     const newPlayerId = `player_${Date.now()}`;
 
@@ -199,14 +208,86 @@ function App() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: '700px', marginTop: '3rem' }}>
+    <div className="container" style={{ maxWidth: '1000px', marginTop: '2rem' }}>
       <div className="card fade-in">
         <div className="card-header text-center">
-          <h1>Longwave</h1>
-          <p className="text-muted">Team Building Game</p>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: 'var(--space-sm)' }}>🌊 Longwave</h1>
+          <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: 0 }}>Teamwork door synchronisatie</p>
         </div>
 
         <div className="card-body">
+          {/* Game Explanation with SVG */}
+          <div className="mb-xl" style={{
+            padding: 'var(--space-xl)',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-color)'
+          }}>
+            <div className="flex gap-xl" style={{ alignItems: 'center' }}>
+              {/* SVG Illustration */}
+              <div style={{ flex: '0 0 200px' }}>
+                <svg viewBox="0 0 200 200" style={{ width: '100%', height: 'auto' }}>
+                  {/* Brain outline */}
+                  <path d="M100,40 Q80,30 70,50 Q60,70 65,90 Q55,100 60,120 Q65,140 80,150 Q90,155 100,160 Q110,155 120,150 Q135,140 140,120 Q145,100 135,90 Q140,70 130,50 Q120,30 100,40" 
+                    fill="none" stroke="#6366f1" strokeWidth="3" opacity="0.6"/>
+                  
+                  {/* Left hemisphere */}
+                  <ellipse cx="75" cy="90" rx="25" ry="35" fill="#6366f1" opacity="0.2"/>
+                  <text x="75" y="95" textAnchor="middle" fontSize="12" fill="#6366f1" fontWeight="bold">L</text>
+                  
+                  {/* Right hemisphere */}
+                  <ellipse cx="125" cy="90" rx="25" ry="35" fill="#a855f7" opacity="0.2"/>
+                  <text x="125" y="95" textAnchor="middle" fontSize="12" fill="#a855f7" fontWeight="bold">R</text>
+                  
+                  {/* Connecting wave */}
+                  <path d="M60,100 Q70,95 80,100 Q90,105 100,100 Q110,95 120,100 Q130,105 140,100" 
+                    fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="4,2"/>
+                  
+                  {/* Target marker */}
+                  <circle cx="100" cy="100" r="8" fill="#ef4444" opacity="0.6"/>
+                  <circle cx="100" cy="100" r="3" fill="#ef4444"/>
+                  
+                  {/* Spectrum line */}
+                  <line x1="40" y1="170" x2="160" y2="170" stroke="#64748b" strokeWidth="3" strokeLinecap="round"/>
+                  <text x="40" y="190" fontSize="10" fill="#64748b">Links</text>
+                  <text x="160" y="190" textAnchor="end" fontSize="10" fill="#64748b">Rechts</text>
+                </svg>
+              </div>
+              
+              {/* Explanation text */}
+              <div style={{ flex: 1 }}>
+                <h3 style={{ marginBottom: 'var(--space-md)', color: 'var(--primary-light)' }}>
+                  Hoe werkt het?
+                </h3>
+                <ul style={{ 
+                  listStyle: 'none', 
+                  padding: 0, 
+                  margin: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-sm)'
+                }}>
+                  <li style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                    <span>🎯</span>
+                    <span>Twee teams proberen op dezelfde golflengte te komen</span>
+                  </li>
+                  <li style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                    <span>💭</span>
+                    <span>Één speler geeft een hint, het team raadt de positie</span>
+                  </li>
+                  <li style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                    <span>📊</span>
+                    <span>Hoe dichter bij de target, hoe meer punten!</span>
+                  </li>
+                  <li style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                    <span>🏆</span>
+                    <span>Eerste team naar 10 punten wint</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {error && (
             <div className="mb-lg" style={{
               padding: 'var(--space-md)',
@@ -219,93 +300,111 @@ function App() {
             </div>
           )}
 
-          {/* Naam invoer los van de rest */}
-          <div className="mb-xl" style={{
-            padding: 'var(--space-lg)',
-            background: 'var(--bg-tertiary)',
-            borderRadius: 'var(--radius-lg)',
-            border: '2px solid var(--border-color)'
-          }}>
-            <label htmlFor="playerName" className="block mb-sm text-center" style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-              Stap 1: Voer je naam in
-            </label>
-            <input
-              id="playerName"
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Je naam..."
-              maxLength={20}
-              style={{ fontSize: '1.1rem', textAlign: 'center' }}
-            />
-          </div>
-
-          <div className="text-center mb-lg text-muted" style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-            Stap 2: Kies een optie
-          </div>
-
-          <div className="flex gap-xl" style={{ alignItems: 'stretch' }}>
-            {/* Nieuwe game starten */}
+          {/* Steps */}
+          <div className="flex gap-lg mb-lg" style={{ alignItems: 'stretch' }}>
+            {/* Step 1: Name input */}
             <div className="flex-1" style={{
-              padding: 'var(--space-lg)',
+              padding: 'var(--space-xl)',
               background: 'var(--bg-tertiary)',
               borderRadius: 'var(--radius-lg)',
-              border: '2px solid var(--border-color)'
+              border: '2px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
-              <h3 className="mb-md text-center">Nieuwe Game</h3>
-              <p className="text-sm text-muted mb-lg text-center">
-                Start een nieuwe game als host
-              </p>
-              <div className="flex flex-col gap-md">
-                <button
-                  className="btn-primary"
-                  onClick={() => handleCreateRoom('classic')}
-                  disabled={!playerName.trim()}
-                >
-                  🎯 Classic Mode
-                </button>
-                <button
-                  className="btn-primary"
-                  onClick={() => handleCreateRoom('pulsecheck')}
-                  disabled={!playerName.trim()}
-                >
-                  📊 Pulse Check
-                </button>
+              <h3 className="text-center mb-md" style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--primary-light)' }}>
+                Stap 1: Voer je naam in
+              </h3>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                <input
+                  id="playerName"
+                  type="text"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  placeholder="Je naam..."
+                  maxLength={20}
+                  style={{ fontSize: '1.1rem', textAlign: 'center', width: '100%' }}
+                />
               </div>
             </div>
 
-            {/* Join bestaande game */}
+            {/* Step 2: Choose option */}
             <div className="flex-1" style={{
-              padding: 'var(--space-lg)',
+              padding: 'var(--space-xl)',
               background: 'var(--bg-tertiary)',
               borderRadius: 'var(--radius-lg)',
-              border: '2px solid var(--border-color)'
+              border: '2px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
-              <h3 className="mb-md text-center">Join Game</h3>
-              <p className="text-sm text-muted mb-lg text-center">
-                Join een bestaande game met code
-              </p>
-              <div className="mb-md">
-                <label htmlFor="roomCode" className="block mb-sm text-center">
-                  Room Code
-                </label>
-                <input
-                  id="roomCode"
-                  type="text"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value.toUpperCase())}
-                  placeholder="ABC123"
-                  maxLength={6}
-                  style={{ textTransform: 'uppercase', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '0.2em' }}
-                />
+              <h3 className="text-center mb-lg" style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--primary-light)' }}>
+                Stap 2: Kies een optie
+              </h3>
+              
+              <div className="flex gap-md" style={{ flex: 1 }}>
+                {/* Nieuwe game */}
+                <div className="flex-1" style={{
+                  padding: 'var(--space-md)',
+                  background: 'rgba(99, 102, 241, 0.05)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-md)'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <h4 className="text-center mb-sm" style={{ fontSize: '1rem' }}>Nieuwe Game</h4>
+                    <p className="text-sm text-muted text-center" style={{ marginBottom: 0 }}>
+                      Start als host
+                    </p>
+                  </div>
+                  <button
+                    className="btn-primary w-full"
+                    onClick={() => handleCreateRoom('classic')}
+                    disabled={!playerName.trim()}
+                    style={{ padding: 'var(--space-md)', fontSize: '1rem' }}
+                  >
+                    🎯 Start
+                  </button>
+                </div>
+
+                {/* Join game */}
+                <div className="flex-1" style={{
+                  padding: 'var(--space-md)',
+                  background: 'rgba(16, 185, 129, 0.05)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-sm)'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <h4 className="text-center mb-sm" style={{ fontSize: '1rem' }}>Join Game</h4>
+                    <input
+                      id="roomCode"
+                      type="text"
+                      value={roomId}
+                      onChange={(e) => setRoomId(e.target.value.toUpperCase())}
+                      placeholder="ABC123"
+                      maxLength={6}
+                      style={{ 
+                        textTransform: 'uppercase', 
+                        textAlign: 'center', 
+                        fontSize: '1rem', 
+                        letterSpacing: '0.2em',
+                        padding: 'var(--space-sm)'
+                      }}
+                    />
+                  </div>
+                  <button
+                    className="btn-success w-full"
+                    onClick={handleJoinRoom}
+                    disabled={!playerName.trim() || !roomId.trim()}
+                    style={{ padding: 'var(--space-md)', fontSize: '1rem' }}
+                  >
+                    🚀 Join
+                  </button>
+                </div>
               </div>
-              <button
-                className="btn-success w-full"
-                onClick={handleJoinRoom}
-                disabled={!playerName.trim() || !roomId.trim()}
-              >
-                🚀 Join Room
-              </button>
             </div>
           </div>
         </div>
